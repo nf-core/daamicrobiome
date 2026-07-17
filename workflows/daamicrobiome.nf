@@ -1,11 +1,20 @@
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
+    IMPORT LOCAL MODULES/SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { paramsSummaryMap       } from 'plugin/nf-schema'
-include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_daamicrobiome_pipeline'
+
+// SUBWORKFLOWS
+include { DIFF_ABUNDANCE as DIFFABUNDANCE }       from '../subworkflows/local/differential_abundance/main'
+include { DIFF_ABUNDANCE_REAL as DIFFABUNDANCE_REAL } from '../subworkflows/local/differentiaL_abundance_real/main'
+include { SIMULATION }                              from '../subworkflows/local/simulation/main'
+include { DA_SCORING_WF as DA_SCORING }             from '../subworkflows/local/da_scoring/main'
+include { APPLY_WEIGHTED_CONSENSUS_WF }                 from '../subworkflows/local/apply_weighted_consensus/main'
+
+// MODULES
+include { EXTRACT_CONTROL } from '../modules/local/extract_control/main'
+include { K_INTERSECTION }  from '../modules/local/k_intersection/main'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -15,48 +24,112 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_daam
 
 workflow DAAMICROBIOME {
 
-    take:
-    ch_samplesheet // channel: samplesheet read in from --input
-    outdir
+    log.info """    ─────────────────────────────────────────────────────────
+     nf-core/daamicrobiome - Microbiome DA Consensus Pipeline
+            runName   : ${workflow.runName}
+            profile   : ${workflow.profile}
+            version   : ${workflow.manifest.version ?: 'dev'}
+    ─────────────────────────────────────────────────────────
+    """.stripIndent()
 
-    main:
+    def INDENT = '        '
+    log.info " Pipeline parameters:"
+    def keys  = params.keySet().sort()
+    def width = keys*.size().max() ?: 0
+    keys.each { k ->
+        def v = params[k]
+        if (v instanceof List || v instanceof Map) {
+            v = groovy.json.JsonOutput.toJson(v)
+        }
+        log.info "${INDENT}${k.padRight(width)}   : ${v} "
+    }
+    log.info "─────────────────────────────────────────────────────────\n"
 
-    def ch_versions = channel.empty()
+    // Validate common inputs
+    if (!params.input) error "params.input must be set (path to the full phyloseq RDS)."
 
-    //
-    // Collate and save software versions
-    //
-    def topic_versions = channel.topic("versions")
-        .distinct()
-        .branch { entry ->
-            versions_file: entry instanceof Path
-            versions_tuple: true
+    // =========================================================================
+    // PATH A: No simulation -- real-only k-intersection consensus
+    // =========================================================================
+    if (!params.simulate) {
+
+        log.info " MODE: Real-only (no simulation). Running DA tools and k-intersection."
+
+        def real_ch = channel
+            .fromPath(params.input, checkIfExists: true)
+            .map { rds -> tuple(rds.baseName, rds) }
+
+        // Run DA tools on real data
+        def da_real = DIFFABUNDANCE_REAL(real_ch)
+
+        // Collect DA result paths grouped by rep_id for k-intersection
+        def per_rep = da_real.da_results
+            .map { rid, tool, p -> tuple(rid, p) }
+            .groupTuple()
+
+        // Build XLSX with k=1..n_tools intersection sheets
+        K_INTERSECTION(per_rep)
+    }
+
+    // =========================================================================
+    // PATH B: Simulation-trained weighted consensus
+    // =========================================================================
+    else {
+
+        log.info " MODE: Simulation-trained weighted consensus."
+
+        // -----------------------------------------------------------------
+        // Step 1: Determine control-only phyloseq for simulation
+        // -----------------------------------------------------------------
+        def control_rds_ch
+
+        if (params.input_control) {
+            log.info " Using provided control-only phyloseq: ${params.input_control}"
+            control_rds_ch = channel.fromPath(params.input_control, checkIfExists: true).first()
+        } else {
+            log.info " Extracting control samples from input (condition='${params.condition}', base='${params.base_level}')"
+            def full_rds = channel.fromPath(params.input, checkIfExists: true).first()
+            control_rds_ch = EXTRACT_CONTROL(full_rds).control_rds
         }
 
-    def topic_versions_string = topic_versions.versions_tuple
-        .map { process, tool, version ->
-            [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
-        }
-        .groupTuple(by:0)
-        .map { process, tool_versions ->
-            tool_versions.unique().sort()
-            "${process}:\n${tool_versions.join('\n')}"
-        }
+        // -----------------------------------------------------------------
+        // Step 2: Simulate datasets from control-only phyloseq
+        // -----------------------------------------------------------------
+        def sim = SIMULATION(control_rds_ch)
 
-    def ch_collated_versions = softwareVersionsToYAML(ch_versions.mix(topic_versions.versions_file))
-        .mix(topic_versions_string)
-        .collectFile(
-            storeDir: "${outdir}/pipeline_info",
-            name: 'nf_core_'  +  'daamicrobiome_software_'  + 'versions.yml',
-            sort: true,
-            newLine: true
-        )
-    emit:
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
+        // -----------------------------------------------------------------
+        // Step 3: Run DA tools on simulated replicates
+        // -----------------------------------------------------------------
+        def da_sim = DIFFABUNDANCE(sim.rds)
+
+        // -----------------------------------------------------------------
+        // Step 4: Score tools using weighted consensus scoring
+        // -----------------------------------------------------------------
+        def sim_root_dir_ch = channel.value(file("${params.outdir}/da_tools"))
+
+        def scoring = DA_SCORING(da_sim.da_results, sim_root_dir_ch, sim.truth_dir)
+        def scoring_dir_ch = scoring.scoring_dir
+
+        // -----------------------------------------------------------------
+        // Step 5: Run DA tools on full real dataset
+        // -----------------------------------------------------------------
+        def real_ch = channel
+            .fromPath(params.input, checkIfExists: true)
+            .map { rds -> tuple("REAL_${rds.baseName}", rds) }
+
+        def da_real = DIFFABUNDANCE_REAL(real_ch)
+
+        // Barrier: wait for all real DA tasks to complete
+        def done_real_ch = da_real.da_results.collect().map { "REAL_DA_DONE" }
+
+        // Path to the published real DA results
+        def real_da_root_ch = real_ch.map { rid, rds ->
+            file("${params.outdir}/da_tools_real/${rid}")
+        }.first()
+
+        // -----------------------------------------------------------------
+        // Step 6: Apply weighted consensus threshold to real results
+        // -----------------------------------------------------------------
+        APPLY_WEIGHTED_CONSENSUS_WF(done_real_ch, scoring_dir_ch, real_da_root_ch)
+    }
 }
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    THE END
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/

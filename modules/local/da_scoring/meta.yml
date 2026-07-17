@@ -1,0 +1,68 @@
+name: DA_SCORING
+description: >
+  Benchmark differential abundance tool outputs against simulated ground truth.
+  Produces pooled and by-design (balanced/confounded) performance metrics,
+  consensus and weighted-consensus evaluations, threshold selection, and plots.
+
+keywords:
+  - differential abundance
+  - benchmarking
+  - simulation
+  - consensus
+  - scoring
+  - metagenomics
+
+tools:
+  - R:
+      description: Runs bin/run_da_scoring.R to compute benchmarking metrics and plots.
+      homepage: https://www.r-project.org/
+      licence: ["GPL-2", "GPL-3"]
+
+input:
+  - da_results:
+      type: tuple
+      description: >
+        Stream of tuples (rep_id, tool_id, result_path) from DIFF_ABUNDANCE.
+        Used to ensure upstream DA outputs exist before scoring.
+  - sim_root:
+      type: directory
+      description: >
+        Root directory containing scenario subfolders with <tool>_da.tsv files.
+  - truth_root:
+      type: directory
+      description: >
+        Directory containing truth CSV files named truth_<tag>.csv.
+  - run_name:
+      type: string
+      description: >
+        Name prefix for the scoring output directory. The R script appends a timestamp.
+  - alpha:
+      type: float
+      description: Adjusted p-value threshold used to call taxa significant per tool.
+  - T_start:
+      type: float
+      description: Start of weighted-consensus threshold grid.
+  - T_end:
+      type: float
+      description: End of weighted-consensus threshold grid.
+  - T_step:
+      type: float
+      description: Step size of weighted-consensus threshold grid.
+  - target_fdr:
+      type: float
+      description: >
+        Target FDR constraint used for threshold selection when strategy is fdr or tradeoff_fdr.
+  - threshold_strategy:
+      type: string
+      description: >
+        Threshold selection strategy. One of:
+        - fdr: maximize F1 under FDR<=target_fdr (fallback to max F1)
+        - f1: maximize F1 ignoring FDR
+        - tradeoff: closest to ideal (F1=1, FDR=0)
+        - tradeoff_fdr: tradeoff under FDR<=target_fdr (fallback to tradeoff)
+
+output:
+  - scoring_dir:
+      type: directory
+      description: >
+        Output directory <run_name>_<timestamp>/ containing CSV summaries and PNG plots.

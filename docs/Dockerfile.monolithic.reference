@@ -1,0 +1,67 @@
+# REFERENCE ONLY — Original monolithic Dockerfile (R 4.5.1, BioConductor 3.21)
+# All DA tools shared one container with phyloseq 1.54.0.
+# BiocManager::install resolved all transitive dependencies (including GenomeInfoDbData).
+# Replaced by per-process Wave containers (see container_dependencies.md).
+
+FROM rocker/r-ver:4.5.1
+
+# System libs often needed by CRAN/Bioc packages
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      gfortran libblas-dev liblapack-dev libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev zlib1g-dev libicu-dev \
+      libfontconfig1-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev \
+      build-essential git pkg-config wget ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# CRAN helpers
+RUN R -q -e "install.packages(c('pak','BiocManager', 'MIDASim'), repos='https://cloud.r-project.org')"
+# CRAN packages via pak
+RUN R -q -e "pak::pkg_install(c('remotes', 'lmerTest', 'modeest', 'devtools', 'withr', 'jsonlite','fs','ggrepel','tibble','dplyr','purrr','readr','stringr','tidyr','ggplot2', 'igraph', 'openxlsx'), upgrade=FALSE); \
+             pkgs <- c('remotes','lmerTest','modeest','devtools','withr'); \
+             for (p in pkgs) if (!requireNamespace(p, quietly=TRUE)) stop('Failed: ', p)"
+
+# Pin Bioc to the release for R 4.5 (3.21)
+RUN R -q -e "options(BioC_mirror='https://bioconductor.org'); \
+             BiocManager::install(version='3.21', ask=FALSE, update=FALSE)"
+
+# Bioconductor packages
+RUN R -q -e "BiocManager::install(c( \
+    'phyloseq', \
+    'ADAPT', \
+    'metagenomeSeq', \
+    'Maaslin2', \
+    'BiocParallel' \
+  ), ask=FALSE, update=FALSE)"
+
+# remotes packages installation
+RUN R -q -e "remotes::install_github('statdivlab/corncob')"
+
+# devtools packages installation
+RUN R -q -e "devtools::install_github('zhouhj1994/LinDA', \
+             dependencies=TRUE, upgrade='never')"
+
+# LOCOM: install with explicit BLAS/LAPACK flags
+RUN R -q -e " \
+  lapack <- system('R CMD config LAPACK_LIBS', intern = TRUE); \
+  blas   <- system('R CMD config BLAS_LIBS',   intern = TRUE); \
+  cat('LAPACK_LIBS:', lapack, '\nBLAS_LIBS  :', blas, '\n'); \
+  cat('.libPaths():', paste(.libPaths(), collapse=' | '), '\n'); \
+  withr::with_makevars( \
+    c(LAPACK_LIBS = lapack, BLAS_LIBS = blas, PKG_LIBS = paste(lapack, blas)), \
+    remotes::install_github('yijuanhu/LOCOM', dependencies = TRUE, upgrade = 'never', force = TRUE) \
+  ); \
+  stopifnot(requireNamespace('LOCOM', quietly = TRUE)); \
+  library(LOCOM); print(packageVersion('LOCOM')) \
+"
+
+# GLPK runtime for igraph (required by phyloseq)
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends libglpk40 || \
+    (apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libglpk-dev)
+
+# Sanity checks
+RUN R -q -e "library(igraph); sessionInfo()"
+RUN R -q -e "library(phyloseq); packageVersion('phyloseq')"
+RUN R -q -e "library(ADAPT);   packageVersion('ADAPT')"
+RUN R -q -e "sessionInfo(); installed.packages()[,c('Package','Version')]"
+
+WORKDIR /work
