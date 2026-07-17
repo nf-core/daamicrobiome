@@ -1,0 +1,2 @@
+name: da_scoring_wf
+description: "Subworkflow to run DA scoring when simulations are enabled."

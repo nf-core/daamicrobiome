@@ -1,0 +1,2 @@
+name: simulation
+description: "Subworkflow that runs MIDASim simulation and emits (rep_id, rds) plus truth directory."

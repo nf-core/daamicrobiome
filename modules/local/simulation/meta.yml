@@ -1,0 +1,16 @@
+name: simulate_midasim
+description: "Simulate MIDASim datasets from a template phyloseq object and write RDS + truth tables."
+keywords:
+  - simulation
+  - MIDASim
+  - phyloseq
+  - differential abundance
+tools:
+  - R
+input:
+  - template_rds: "Template phyloseq .RDS file used to fit MIDASim and derive library/batch structure."
+output:
+  - rds_files: "Simulated phyloseq .RDS files (one per scenario)."
+  - truth_dir: "Directory with truth_*.csv files (ground truth DA labels/logFC)."
+  - meta_dir: "Directory with meta_*.json files per scenario."
+  - index_csv: "index.csv summarizing all scenarios and file paths."
