@@ -27,7 +27,7 @@ Each enabled DA tool produces a TSV file with per-taxon p-values, adjusted p-val
 
 ## Path B output (`--simulate true`)
 
-### Soft consensus results
+### Weighted consensus results
 
 Output directory: `results/weighted_consensus/`
 
@@ -50,9 +50,9 @@ Output directory: `results/da_scoring/`
 
 | File | Description |
 |------|-------------|
-| `soft_tool_scores.csv` | Per-tool weights learned from simulations |
+| `tool_scores.csv` | Per-tool weights learned from simulations |
 | `optimal_threshold.txt` | The optimal score threshold |
-| `soft_threshold_summary.csv` | Summary of threshold optimisation |
+| `threshold_summary.csv` | Summary of threshold optimisation |
 | `global_performance_tools_threshold.png` | Performance plot across tools and thresholds |
 | `tool_metrics_by_dataset.csv` | Per-tool, per-simulation-scenario metrics |
 | `simulation_analysis.rds` | Full R object with all scoring results |

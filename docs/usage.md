@@ -36,7 +36,7 @@ nextflow run nf-core/daamicrobiome \
   --outdir results/
 ```
 
-### Path B: simulation-trained soft consensus (`--simulate true`)
+### Path B: simulation-trained weighted consensus (`--simulate true`)
 
 Default mode. Extracts control samples, simulates ground-truth datasets via MIDASim, scores DA tools, and applies the optimal threshold to real data.
 
@@ -59,7 +59,7 @@ nextflow run nf-core/daamicrobiome \
 | `--input` | (required) | Path to the full phyloseq RDS object |
 | `--input_control` | `null` | Path to a control-only phyloseq RDS (optional, Path B) |
 | `--outdir` | `results/` | Output directory |
-| `--simulate` | `true` | `false` = Path A (k-intersection), `true` = Path B (soft consensus) |
+| `--simulate` | `true` | `false` = Path A (k-intersection), `true` = Path B (weighted consensus) |
 
 ### Metadata parameters
 

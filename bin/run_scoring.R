@@ -1,14 +1,14 @@
 #!/usr/bin/env Rscript
 # ======================================================================
-# Benchmark simulated DA results against truth (soft consensus scoring)
+# Benchmark simulated DA results against truth (weighted consensus scoring)
 #
 # What it does:
 # 1) Reads all simulated tool results and truth tables
 # 2) Computes TP / FP / FN / TN, FDR and F1 for each tool and dataset
 # 3) Summarizes methods across scenarios
 # 4) Selects the best single tool under FDR < fdr_target
-# 5) Computes soft tool weights based on mean F1 and mean FDR
-# 6) Finds the optimal soft consensus threshold on simulations
+# 5) Computes weighted tool scores based on mean F1 and mean FDR
+# 6) Finds the optimal weighted consensus threshold on simulations
 # 7) Saves CSVs, plot, optimal_threshold.txt, and RDS
 #
 # Assumptions:
@@ -171,7 +171,7 @@ score_single_tool_dataset <- function(res_df, truth_df, alpha = 0.05,
   score_directional_prediction(pred_df, truth_df)
 }
 
-compute_soft_tool_scores <- function(tool_summary_table,
+compute_weighted_tool_scores <- function(tool_summary_table,
                                       fdr_target = 0.05,
                                       fdr_reference = 0.10,
                                       retention_at_reference = 0.25) {
@@ -199,7 +199,7 @@ compute_soft_tool_scores <- function(tool_summary_table,
   list(lambda = lambda, summary_table = df %>% arrange(desc(score)))
 }
 
-build_soft_ensemble_dataset <- function(result_list_all, truth_df, tool_scores,
+build_weighted_ensemble_dataset <- function(result_list_all, truth_df, tool_scores,
                                          alpha = 0.05,
                                          significance_col = "adj_pval",
                                          round_digits = 8) {
@@ -252,13 +252,13 @@ build_soft_ensemble_dataset <- function(result_list_all, truth_df, tool_scores,
   ensemble_df
 }
 
-find_optimal_soft_threshold <- function(raw_results, truth_tables, tool_scores,
+find_optimal_weighted_threshold <- function(raw_results, truth_tables, tool_scores,
                                          dataset_ids, alpha = 0.05,
                                          significance_col = "adj_pval",
                                          fdr_target = 0.05,
                                          round_digits = 8) {
   ensemble_tables <- lapply(dataset_ids, function(ds) {
-    build_soft_ensemble_dataset(
+    build_weighted_ensemble_dataset(
       result_list_all = lapply(names(raw_results), function(tool) raw_results[[tool]][[ds]]) |> setNames(names(raw_results)),
       truth_df = truth_tables[[ds]],
       tool_scores = tool_scores,
@@ -299,7 +299,7 @@ find_optimal_soft_threshold <- function(raw_results, truth_tables, tool_scores,
   valid <- threshold_summary %>% filter(mean_FDR < fdr_target)
 
   if (nrow(valid) == 0) {
-    warning("No soft threshold achieved mean FDR < ", fdr_target,
+    warning("No weighted threshold achieved mean FDR < ", fdr_target,
             ". Using fallback: minimum mean FDR, then maximum mean F1, then higher threshold.")
     best_row <- threshold_summary %>%
       arrange(mean_FDR, desc(mean_F1), desc(threshold)) %>%
@@ -327,7 +327,7 @@ plot_global_performance <- function(tool_summary_global, best_threshold_row,
   tools_df <- tool_summary_global %>%
     transmute(label = tool, method_type = "Single tool", mean_FDR = mean_FDR, mean_F1 = mean_F1)
   thr_df <- best_threshold_row %>%
-    transmute(label = paste0("Soft T = ", round(threshold, 4)), method_type = "Soft threshold",
+    transmute(label = paste0("Weighted T = ", round(threshold, 4)), method_type = "Weighted threshold",
               mean_FDR = mean_FDR, mean_F1 = mean_F1)
 
   plot_df <- bind_rows(tools_df, thr_df)
@@ -339,7 +339,7 @@ plot_global_performance <- function(tool_summary_global, best_threshold_row,
                              box.padding = 0.4, point.padding = 0.3, max.overlaps = Inf) +
     scale_x_reverse(name = "Mean FDR", limits = c(1, 0)) +
     scale_y_continuous(name = "Mean F1", limits = c(0, 1)) +
-    labs(title = "Global performance: individual tools vs soft consensus threshold",
+    labs(title = "Global performance: individual tools vs weighted consensus threshold",
          subtitle = paste0("Dashed line = FDR target (", fdr_target, ")"), color = NULL) +
     theme_minimal(base_size = 13) +
     theme(panel.grid.minor = element_blank(), plot.title = element_text(face = "bold"))
@@ -435,23 +435,23 @@ if (nrow(best_single_tool) == 0) {
   best_single_tool <- best_single_tool %>% dplyr::slice_head(n = 1)
 }
 
-# 5) Soft tool scores and optimal threshold
-cat("[run_scoring] Computing soft tool scores...\n")
-soft_scores <- compute_soft_tool_scores(
+# 5) Weighted tool scores and optimal threshold
+cat("[run_scoring] Computing weighted tool scores...\n")
+weighted_scores <- compute_weighted_tool_scores(
   tool_summary_table = tool_summary_global,
   fdr_target = fdr_target,
   fdr_reference = fdr_reference,
   retention_at_reference = retention_at_ref
 )
 
-soft_tool_scores <- soft_scores$summary_table$score
-names(soft_tool_scores) <- soft_scores$summary_table$tool
+weighted_tool_scores <- weighted_scores$summary_table$score
+names(weighted_tool_scores) <- weighted_scores$summary_table$tool
 
-cat("[run_scoring] Finding optimal soft threshold...\n")
-soft_threshold <- find_optimal_soft_threshold(
+cat("[run_scoring] Finding optimal weighted threshold...\n")
+weighted_threshold <- find_optimal_weighted_threshold(
   raw_results = raw_results,
   truth_tables = truth_tables,
-  tool_scores = soft_tool_scores,
+  tool_scores = weighted_tool_scores,
   dataset_ids = dataset_ids,
   alpha = alpha_results, significance_col = "adj_pval",
   fdr_target = fdr_target, round_digits = round_digits
@@ -460,7 +460,7 @@ soft_threshold <- find_optimal_soft_threshold(
 # 6) Plot
 cat("[run_scoring] Generating plot...\n")
 tryCatch({
-  plot_global_performance(tool_summary_global, soft_threshold$best_row,
+  plot_global_performance(tool_summary_global, weighted_threshold$best_row,
                           fdr_target = fdr_target, outdir = outdir)
 }, error = function(e) {
   warning("Plot generation failed (non-fatal): ", conditionMessage(e))
@@ -481,8 +481,8 @@ simulation_analysis <- list(
   tool_summary_global = tool_summary_global,
   F1_table = F1_table, FDR_table = FDR_table,
   best_single_tool = best_single_tool,
-  soft_scores = soft_scores,
-  soft_threshold = soft_threshold
+  weighted_scores = weighted_scores,
+  weighted_threshold = weighted_threshold
 )
 
 saveRDS(simulation_analysis, file.path(outdir, "simulation_analysis.rds"))
@@ -490,12 +490,12 @@ write.csv(tool_metrics_by_dataset, file.path(outdir, "tool_metrics_by_dataset.cs
 write.csv(tool_summary_by_scenario, file.path(outdir, "tool_summary_by_scenario.csv"), row.names = FALSE)
 write.csv(tool_summary_global, file.path(outdir, "tool_summary_global.csv"), row.names = FALSE)
 write.csv(best_single_tool, file.path(outdir, "best_single_tool.csv"), row.names = FALSE)
-write.csv(soft_scores$summary_table, file.path(outdir, "soft_tool_scores.csv"), row.names = FALSE)
-write.csv(soft_threshold$threshold_summary, file.path(outdir, "soft_threshold_summary.csv"), row.names = FALSE)
+write.csv(weighted_scores$summary_table, file.path(outdir, "tool_scores.csv"), row.names = FALSE)
+write.csv(weighted_threshold$threshold_summary, file.path(outdir, "threshold_summary.csv"), row.names = FALSE)
 
-writeLines(as.character(soft_threshold$best_threshold),
+writeLines(as.character(weighted_threshold$best_threshold),
            file.path(outdir, "optimal_threshold.txt"))
 
-cat("[run_scoring] Optimal soft threshold:", soft_threshold$best_threshold, "\n")
+cat("[run_scoring] Optimal weighted threshold:", weighted_threshold$best_threshold, "\n")
 cat("[run_scoring] Best single tool:", best_single_tool$tool[1], "\n")
 cat("[run_scoring] Done. Results in:", outdir, "\n")

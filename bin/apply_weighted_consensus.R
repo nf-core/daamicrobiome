@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # ======================================================================
-# Apply the soft-consensus threshold learned from simulations to real
+# Apply the weighted consensus threshold learned from simulations to real
 # DA results. Reads tool weights and optimal threshold from run_scoring.R
 # outputs, then applies them to *_da.tsv files from real data.
 # ======================================================================
@@ -26,7 +26,7 @@ alpha       <- as.numeric(.get_arg("--alpha", "0.05"))
 lfc_min     <- as.numeric(.get_arg("--lfc_min", "0"))
 
 if (is.null(scoring_dir) || is.null(da_dir)) {
-  stop("Usage: apply_soft_consensus.R --scoring_dir <dir> --da_dir <dir> ",
+  stop("Usage: apply_weighted_consensus.R --scoring_dir <dir> --da_dir <dir> ",
        "[--outdir .] [--alpha 0.05] [--lfc_min 0]")
 }
 
@@ -35,7 +35,7 @@ dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
 # -------------------------
 # Read scoring outputs
 # -------------------------
-scores_file <- file.path(scoring_dir, "soft_tool_scores.csv")
+scores_file <- file.path(scoring_dir, "tool_scores.csv")
 threshold_file <- file.path(scoring_dir, "optimal_threshold.txt")
 
 if (!file.exists(scores_file)) stop("Missing: ", scores_file)
@@ -44,14 +44,14 @@ if (!file.exists(threshold_file)) stop("Missing: ", threshold_file)
 scores_tbl <- read_csv(scores_file, show_col_types = FALSE)
 T_opt <- as.numeric(readLines(threshold_file, n = 1))
 
-cat("[apply_soft_consensus] Scoring dir  :", scoring_dir, "\n")
-cat("[apply_soft_consensus] DA dir       :", da_dir, "\n")
-cat("[apply_soft_consensus] Threshold    :", T_opt, "\n")
-cat("[apply_soft_consensus] Alpha        :", alpha, "\n")
-cat("[apply_soft_consensus] LFC min      :", lfc_min, "\n")
+cat("[apply_weighted_consensus] Scoring dir  :", scoring_dir, "\n")
+cat("[apply_weighted_consensus] DA dir       :", da_dir, "\n")
+cat("[apply_weighted_consensus] Threshold    :", T_opt, "\n")
+cat("[apply_weighted_consensus] Alpha        :", alpha, "\n")
+cat("[apply_weighted_consensus] LFC min      :", lfc_min, "\n")
 
 weight_map <- setNames(scores_tbl$score, tolower(scores_tbl$tool))
-cat("[apply_soft_consensus] Tool weights :\n")
+cat("[apply_weighted_consensus] Tool weights :\n")
 for (t in names(weight_map)) cat("  ", t, "=", round(weight_map[[t]], 4), "\n")
 
 # -------------------------
@@ -77,7 +77,7 @@ read_da <- function(path) {
 }
 
 da_long <- bind_rows(lapply(da_files, read_da))
-cat("[apply_soft_consensus] Read", nrow(da_long), "rows from", length(da_files), "DA files\n")
+cat("[apply_weighted_consensus] Read", nrow(da_long), "rows from", length(da_files), "DA files\n")
 
 # -------------------------
 # Compute per-taxon weighted scores
@@ -134,16 +134,16 @@ taxon_scores <- taxon_scores %>%
   select(taxon_id, direction, ensemble_score, n_tools_agreeing,
          tools_up, tools_down, starts_with("det_"))
 
-out_file <- file.path(outdir, "soft_consensus_results.csv")
+out_file <- file.path(outdir, "weighted_consensus_results.csv")
 write_csv(taxon_scores, out_file)
 
 n_ambig <- sum(da_calls %>% group_by(taxon_id) %>%
   summarise(su = sum(weight[sign > 0]), sd = sum(weight[sign < 0]), .groups = "drop") %>%
   { .$su == .$sd & .$su > 0 })
 if (n_ambig > 0)
-  cat("[apply_soft_consensus]", n_ambig, "taxa dropped (equal weighted score in both directions)\n")
-cat("[apply_soft_consensus] Taxa passing threshold:", nrow(taxon_scores), "\n")
-cat("[apply_soft_consensus] Wrote:", out_file, "\n")
+  cat("[apply_weighted_consensus]", n_ambig, "taxa dropped (equal weighted score in both directions)\n")
+cat("[apply_weighted_consensus] Taxa passing threshold:", nrow(taxon_scores), "\n")
+cat("[apply_weighted_consensus] Wrote:", out_file, "\n")
 
 # Also write a summary
 summary_tbl <- tibble(
@@ -154,4 +154,4 @@ summary_tbl <- tibble(
   n_up = sum(taxon_scores$direction == "up"),
   n_down = sum(taxon_scores$direction == "down")
 )
-write_csv(summary_tbl, file.path(outdir, "soft_consensus_summary.csv"))
+write_csv(summary_tbl, file.path(outdir, "weighted_consensus_summary.csv"))
