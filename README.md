@@ -21,54 +21,71 @@
 
 ## Introduction
 
-**nf-core/daamicrobiome** is a bioinformatics pipeline that ...
+**nf-core/daamicrobiome** is a bioinformatics pipeline for microbiome differential abundance (DA) analysis that runs multiple DA tools in parallel and combines their results into a consensus. It takes a [phyloseq](https://joey711.github.io/phyloseq/) RDS object as input and supports two analysis paths:
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+- **Path A — k-intersection consensus**: runs DA tools on real data and reports taxa called differentially abundant by at least _k_ tools in agreement.
+- **Path B — simulation-based weighted consensus** (default): uses [MIDASim](https://github.com/mengyu-he/MIDASim) to generate ground-truth simulated datasets from control samples, scores each DA tool's performance on these simulations, and applies the learned per-tool weights to the real-data results.
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/community/brand/workflow-schematics#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
+### DA tools included
+
+| Tool | Reference |
+|------|-----------|
+| [ADAPT](https://bioconductor.org/packages/ADAPT/) | Wang & Mukai, 2024 |
+| [corncob](https://github.com/statdivlab/corncob) | Martin et al., 2020 |
+| [LinDA](https://github.com/zhouhj1994/LinDA) | Zhou et al., 2022 |
+| [LOCOM](https://github.com/yijuanhu/LOCOM) | Hu et al., 2022 |
+| [MaAsLin2](https://huttenhower.sph.harvard.edu/maaslin/) | Mallick et al., 2021 |
+| [metagenomeSeq](https://bioconductor.org/packages/metagenomeSeq/) | Paulson et al., 2013 |
+
+### Pipeline overview
+
+<p align="center">
+  <img src="docs/daamicrobiome_pipeline.png" alt="nf-core/daamicrobiome pipeline diagram" width="80%">
+</p>
+
+1. **Control extraction** (Path B) — subset control/healthy samples from the input phyloseq (or use a provided control-only object)
+2. **Simulation** (Path B) — generate ground-truth datasets with known DA taxa via MIDASim
+3. **DA analysis** — run the enabled DA tools on simulated and/or real data
+4. **Scoring** (Path B) — evaluate each tool's sensitivity, specificity, and FDR on simulations to derive per-tool weights
+5. **Consensus** — combine results via weighted consensus (Path B) or k-intersection (Path A)
 
 ## Usage
 
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/get_started/environment_setup/overview) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/get_started/run-your-first-pipeline) with `-profile test` before running the workflow on actual data.
 
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
+### Input
 
-First, prepare a samplesheet with your input data that looks as follows:
+The pipeline requires a **phyloseq RDS object** (`.RDS`) containing an OTU/ASV count table, sample metadata with a condition/group column, and a taxonomy table.
 
-`samplesheet.csv`:
-
-```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-```
-
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
-
--->
-
-Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
+### Path A: k-intersection consensus
 
 ```bash
 nextflow run nf-core/daamicrobiome \
-   -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
-   --outdir <OUTDIR>
+  -profile docker \
+  --input phyloseq.RDS \
+  --simulate false \
+  --condition "study_condition" \
+  --base_level "healthy" \
+  --outdir results/
+```
+
+### Path B: simulation-trained weighted consensus (default)
+
+```bash
+nextflow run nf-core/daamicrobiome \
+  -profile docker \
+  --input phyloseq.RDS \
+  --simulate true \
+  --condition "study_condition" \
+  --base_level "healthy" \
+  --outdir results/
 ```
 
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/running/run-pipelines#using-parameter-files).
 
-For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/daamicrobiome/usage) and the [parameter documentation](https://nf-co.re/daamicrobiome/parameters).
+For the full list of parameters (DA tool toggles, simulation settings, scoring thresholds, resource limits), please refer to the [usage documentation](https://nf-co.re/daamicrobiome/usage) and the [parameter documentation](https://nf-co.re/daamicrobiome/parameters).
 
 ## Pipeline output
 
@@ -78,7 +95,7 @@ For more details about the output files and reports, please refer to the
 
 ## Credits
 
-nf-core/daamicrobiome was originally written by Martina Cardinali.
+nf-core/daamicrobiome was originally written by Martina Cardinali and Toni Gabaldón.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
@@ -94,8 +111,6 @@ For further information or help, don't hesitate to get in touch on the [Slack `#
 
 <!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi and badge at the top of this file. -->
 <!-- If you use nf-core/daamicrobiome for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
-
-<!-- TODO nf-core: Add bibliography of tools and data used in your pipeline -->
 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md) file.
 
