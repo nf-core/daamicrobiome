@@ -1,6 +1,11 @@
 process SIMULATE_MIDASIM {
   tag { "SIMULATE_MIDASIM:${template_rds.getBaseName()}" }
 
+  conda "${moduleDir}/environment.yml"
+  container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+      'oras://community.wave.seqera.io/library/bioconductor-phyloseq_r-jsonlite_r-midasim_r-optparse_pruned:28dca7cfb104f36a' :
+      'community.wave.seqera.io/library/bioconductor-phyloseq_r-jsonlite_r-midasim_r-optparse_pruned:aa194648f0a0a384' }"
+
   input:
   path(template_rds)
 

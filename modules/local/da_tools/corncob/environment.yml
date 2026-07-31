@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::r-corncob=0.4.2
+  - bioconductor-phyloseq=1.50.0
+  - conda-forge::r-optparse=1.8.2

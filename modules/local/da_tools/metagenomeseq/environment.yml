@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconductor-metagenomeseq=1.52.0
+  - bioconductor-phyloseq=1.54.0
+  - conda-forge::r-optparse=1.8.2

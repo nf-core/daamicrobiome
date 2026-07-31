@@ -1,6 +1,11 @@
 process METAGENOMESEQ {
   tag "METAGENOMESEQ:${rep_id}"
 
+  conda "${moduleDir}/environment.yml"
+  container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+      'oras://community.wave.seqera.io/library/bioconductor-metagenomeseq_bioconductor-phyloseq_r-optparse:52e10cf8b0086f95' :
+      'community.wave.seqera.io/library/bioconductor-metagenomeseq_bioconductor-phyloseq_r-optparse:f1a7e0d8232664ef' }"
+
   input:
   tuple val(rep_id), path(rds_file)
 

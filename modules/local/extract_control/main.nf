@@ -1,6 +1,11 @@
 process EXTRACT_CONTROL {
   tag { "EXTRACT_CONTROL" }
 
+  conda "${moduleDir}/environment.yml"
+  container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+      'oras://community.wave.seqera.io/library/bioconductor-phyloseq_r-optparse:0dd0584c7eb781d3' :
+      'community.wave.seqera.io/library/bioconductor-phyloseq_r-optparse:3b069fdafb1cf2ae' }"
+
   input:
   path(full_phyloseq)
 

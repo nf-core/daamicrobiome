@@ -1,6 +1,11 @@
 process CORNCOB {
   tag {"CORNCOB:${rep_id}"}
 
+  conda "${moduleDir}/environment.yml"
+  container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+      'oras://community.wave.seqera.io/library/bioconductor-phyloseq_r-corncob_r-optparse:dcc1ecae5d95f751' :
+      'community.wave.seqera.io/library/bioconductor-phyloseq_r-corncob_r-optparse:f7924eca4de39287' }"
+
   input:
   tuple val(rep_id), path(rds_file)
 

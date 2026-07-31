@@ -1,6 +1,11 @@
 process K_INTERSECTION {
   tag { "K_INTERSECTION:${rep_id}" }
 
+  conda "${moduleDir}/environment.yml"
+  container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+      'oras://community.wave.seqera.io/library/r-fs_r-ggrepel_r-openxlsx_r-optparse_r-tidyverse:0b1743bb97ecab27' :
+      'community.wave.seqera.io/library/r-fs_r-ggrepel_r-openxlsx_r-optparse_r-tidyverse:7c83a0ba9460a597' }"
+
   input:
   tuple val(rep_id), path(da_tsv_files)
 

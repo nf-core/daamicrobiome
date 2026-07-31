@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconductor-adapt=1.4.0
+  - bioconductor-phyloseq=1.54.0
+  - conda-forge::r-optparse=1.8.2

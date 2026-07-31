@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  # PENDING: r-locom2 bioconda recipe awaiting review
+  - bioconda::r-locom2=1.0
+  - bioconductor-phyloseq=1.54.0
+  - conda-forge::r-optparse=1.8.2

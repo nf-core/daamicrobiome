@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - conda-forge::r-midasim=2.0
+  - bioconductor-phyloseq=1.54.0
+  - conda-forge::r-tidyverse=2.0.0
+  - conda-forge::r-jsonlite=2.0.0
+  - conda-forge::r-ragg=1.5.2
+  - conda-forge::r-optparse=1.8.2

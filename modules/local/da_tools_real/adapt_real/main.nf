@@ -1,6 +1,11 @@
 process ADAPT_REAL {
   tag { "ADAPT_REAL:${rep_id}" }
 
+  conda "${moduleDir}/environment.yml"
+  container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+      'oras://community.wave.seqera.io/library/bioconductor-adapt_bioconductor-phyloseq_r-optparse:bd485df825838000' :
+      'community.wave.seqera.io/library/bioconductor-adapt_bioconductor-phyloseq_r-optparse:7fbd22e8854667d5' }"
+
   input:
   tuple val(rep_id), path(rds_file)
 

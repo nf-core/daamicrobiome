@@ -1,6 +1,8 @@
 process MAASLIN2 {
   tag {"MAASLIN2:${rep_id}"}
 
+  conda "${moduleDir}/environment.yml"
+
   input:
   tuple val(rep_id), path(rds_file)
 
