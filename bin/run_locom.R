@@ -10,7 +10,7 @@
 #   - LOCOM results
 #   - Also saves a TSV file to "locom_results.tsv"
 source('normalize_confounder.R', chdir = TRUE)
-library(LOCOM); packageVersion("LOCOM")
+library(LOCOM2); packageVersion("LOCOM2")
 library(phyloseq)
 
 run_locom_analysis <- function(ps_object, condition_var, base_condition,
@@ -75,7 +75,7 @@ run_locom_analysis <- function(ps_object, condition_var, base_condition,
 
   if (n_samples < 4 || n_taxa < 2) {
     msg <- sprintf("Too few samples/taxa after dropping empty samples (n_samples=%d, n_taxa=%d).", n_samples, n_taxa)
-    message("[LOCOM] WARNING: ", msg)
+    message("[LOCOM2] WARNING: ", msg)
     write_empty_locom_tsv()
     write_status(ok = FALSE, err_msg = msg, n_samples = n_samples, n_taxa = n_taxa)
     return(NULL)
@@ -133,35 +133,35 @@ run_locom_analysis <- function(ps_object, condition_var, base_condition,
   err_msg <- ""
 
   output_locom <- tryCatch({
-    locom(
+    locom2(
       otu.table    = otu_mat,
       Y            = Y,
       C            = C,
       seed         = 123,
-      filter.thresh = otu_filter,
+      filter       = (otu_filter > 0),
       fdr.nominal  = fdr.nominal,
       n.perm.max   = 1000,
-      n.rej.stop   = 10,
+      n.rej.stop   = 100,
       n.cores      = 1
     )
   }, error = function(e) {
     ok <<- FALSE
     err_msg <<- conditionMessage(e)
-    message("[LOCOM] WARNING: LOCOM failed with error: ", err_msg)
+    message("[LOCOM2] WARNING: LOCOM failed with error: ", err_msg)
     NULL
   })
 
   # -------------------------
   # Write output TSV (always)
   # -------------------------
-  if (is.null(output_locom) || is.null(output_locom$effect.size) || nrow(output_locom$effect.size) == 0) {
+  if (is.null(output_locom) || is.null(output_locom$beta) || length(output_locom$beta) == 0) {
     write_empty_locom_tsv()
   } else {
     heatmap_ready <- data.frame(
-      taxon_id = names(output_locom$effect.size[1, ]),
-      lfc      = as.numeric(output_locom$effect.size[1, ]),
-      pvalue   = as.numeric(output_locom$p.otu[1, ]),
-      adj_pval = as.numeric(output_locom$q.otu[1, ]),
+      taxon_id = names(output_locom$beta),
+      lfc      = as.numeric(output_locom$beta),
+      pvalue   = as.numeric(output_locom$p.otu.Wald),
+      adj_pval = as.numeric(output_locom$q.otu.Wald),
       tool     = "locom",
       stringsAsFactors = FALSE
     )

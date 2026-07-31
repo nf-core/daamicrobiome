@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 source('normalize_confounder.R', chdir = TRUE)
 
-library(LinDA); packageVersion("LinDA") # 0.2.0
+library(MicrobiomeStat); packageVersion("MicrobiomeStat")
 library(phyloseq)
 
 run_linda_analysis <- function(ps_object, condition_var, base_condition, confounder = NULL, output_dir) {
@@ -22,8 +22,8 @@ run_linda_analysis <- function(ps_object, condition_var, base_condition, confoun
 
   # Run LinDA
   results_linda <- linda(
-    otu.tab = otu_table(ps_object),
-    meta = metadata_linda,
+    feature.dat = otu_table(ps_object),
+    meta.dat = metadata_linda,
     formula = fml
   )
   

@@ -1,6 +1,11 @@
 process LINDA_REAL {
   tag "LINDA_REAL:${rep_id}"
 
+  conda "${moduleDir}/environment.yml"
+  container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+      'oras://community.wave.seqera.io/library/bioconductor-phyloseq_r-microbiomestat_r-optparse:495b95c5f31d5ae2' :
+      'community.wave.seqera.io/library/bioconductor-phyloseq_r-microbiomestat_r-optparse:96e50fbd93fbbf1a' }"
+
   input:
   tuple val(rep_id), path(rds_file)
 
@@ -25,7 +30,7 @@ process LINDA_REAL {
 
   cat <<-END_VERSIONS > versions.yml
   "${task.process}":
-      LinDA: \$(Rscript -e "cat(as.character(packageVersion('LinDA')))")
+      MicrobiomeStat: \$(Rscript -e "cat(as.character(packageVersion('MicrobiomeStat')))")
       R: \$(Rscript -e "cat(R.version.string)")
   END_VERSIONS
   """

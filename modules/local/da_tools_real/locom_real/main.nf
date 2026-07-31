@@ -1,6 +1,8 @@
 process LOCOM_REAL {
   tag "LOCOM_REAL:${rep_id}"
 
+  conda "${moduleDir}/environment.yml"
+
   input:
   tuple val(rep_id), path(rds_file)
 
@@ -37,7 +39,7 @@ process LOCOM_REAL {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        LOCOM: \$(Rscript -e "cat(as.character(packageVersion('LOCOM')))")
+        LOCOM2: \$(Rscript -e "cat(as.character(packageVersion('LOCOM2')))")
         R: \$(Rscript -e "cat(R.version.string)")
     END_VERSIONS
     """
