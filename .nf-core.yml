@@ -1,5 +1,5 @@
 repository_type: pipeline
-nf_core_version: 4.0.2
+nf_core_version: 4.1.0
 lint:
   files_unchanged:
     - assets/sendmail_template.txt
@@ -11,6 +11,7 @@ lint:
     - conf/igenomes_ignored.config
     - assets/multiqc_config.yml
     - .github/workflows/linting_comment.yml
+  schema_params: false
 template:
   org: nf-core
   name: daamicrobiome

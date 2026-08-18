@@ -1,2 +1,41 @@
-name: simulation
-description: "Subworkflow that runs MIDASim simulation and emits (rep_id, rds) plus truth directory."
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "simulation"
+description: Run MIDASim to generate simulated microbiome datasets with known DA taxa
+keywords:
+  - simulation
+  - midasim
+  - microbiome
+  - differential-abundance
+components:
+  - simulate/midasim
+input:
+  - template_rds_ch:
+      type: channel
+      description: |
+        Channel emitting one control-only phyloseq RDS used as simulation template
+        Structure: [ path(template.rds) ]
+output:
+  - rds:
+      type: channel
+      description: |
+        Simulated replicate phyloseq RDS files
+        Structure: [ val(rep_id), path(replicate.rds) ]
+  - truth_dir:
+      type: directory
+      description: |
+        Directory containing ground-truth DA labels per scenario
+        Structure: [ path(truth_dir) ]
+  - meta_dir:
+      type: directory
+      description: |
+        Directory containing simulation metadata
+        Structure: [ path(meta_dir) ]
+  - index_csv:
+      type: file
+      description: |
+        CSV index mapping scenario parameters to replicate files
+        Structure: [ path(index.csv) ]
+authors:
+  - "@mcardina"
+maintainers:
+  - "@mcardina"

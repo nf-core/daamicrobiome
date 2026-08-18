@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "apply_weighted_consensus_wf"
+description: Apply simulation-trained weights to real DA results and produce consensus calls
+keywords:
+  - consensus
+  - weighted
+  - differential-abundance
+components:
+  - apply/weighted/consensus
+input:
+  - done_real_ch:
+      type: channel
+      description: |
+        Signal that real-data DA analysis is complete
+        Structure: [ val(done_signal) ]
+  - scoring_dir_ch:
+      type: channel
+      description: |
+        Directory containing tool weights from simulation scoring
+        Structure: [ path(scoring_dir) ]
+  - real_da_root_ch:
+      type: channel
+      description: |
+        Root directory containing real-data DA results from all tools
+        Structure: [ path(real_da_root) ]
+output:
+  - consensus:
+      type: directory
+      description: |
+        Directory containing weighted consensus DA calls
+        Structure: [ path(consensus_dir) ]
+authors:
+  - "@mcardina"
+maintainers:
+  - "@mcardina"

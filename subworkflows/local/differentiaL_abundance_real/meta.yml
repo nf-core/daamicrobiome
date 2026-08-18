@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "diff_abundance_real"
+description: Run all enabled DA tools on real (non-simulated) data
+keywords:
+  - differential-abundance
+  - real-data
+  - adapt
+  - corncob
+  - linda
+  - locom
+  - maaslin2
+  - metagenomeseq
+components:
+  - adapt/real
+  - corncob/real
+  - linda/real
+  - locom/real
+  - maaslin2/real
+  - metagenomeseq/real
+input:
+  - rep_rds_ch:
+      type: channel
+      description: |
+        Real-data phyloseq RDS files
+        Structure: [ val(rep_id), path(input.rds) ]
+output:
+  - da_results:
+      type: channel
+      description: |
+        Unified stream of DA results from all enabled tools
+        Structure: [ val(rep_id), val(tool_id), path(result.tsv) ]
+authors:
+  - "@mcardina"
+maintainers:
+  - "@mcardina"

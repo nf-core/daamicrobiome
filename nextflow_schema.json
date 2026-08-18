@@ -16,12 +16,16 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "schema": "assets/schema_input.json",
-                    "mimetype": "text/csv",
-                    "pattern": "^\\S+\\.csv$",
-                    "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/daamicrobiome/usage#samplesheet-input).",
-                    "fa_icon": "fas fa-file-csv"
+                    "mimetype": "application/octet-stream",
+                    "description": "Path to phyloseq RDS file containing OTU table, taxonomy, sample metadata.",
+                    "help_text": "A phyloseq object saved as .rds. Must contain an OTU table, taxonomy table, and sample_data with at least the condition column.",
+                    "fa_icon": "fas fa-file"
+                },
+                "input_control": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "Path to control-only phyloseq RDS (optional). If null and simulate=true, extracted from input.",
+                    "fa_icon": "fas fa-file"
                 },
                 "outdir": {
                     "type": "string",
@@ -35,6 +39,217 @@
                     "fa_icon": "fas fa-envelope",
                     "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
                     "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$"
+                }
+            }
+        },
+        "pipeline_mode_options": {
+            "title": "Pipeline mode",
+            "type": "object",
+            "fa_icon": "fas fa-cogs",
+            "description": "Choose between real-only consensus (Path A) and simulation-trained weighted consensus (Path B).",
+            "properties": {
+                "simulate": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable simulation mode (Path B). Set to false for real-only k-intersection (Path A)."
+                }
+            }
+        },
+        "metadata_options": {
+            "title": "Metadata options",
+            "type": "object",
+            "fa_icon": "fas fa-tags",
+            "description": "Metadata column names for real data analysis and control extraction.",
+            "properties": {
+                "condition": {
+                    "type": "string",
+                    "default": "study_condition",
+                    "description": "sample_data column with the group variable (case vs control)."
+                },
+                "base_level": {
+                    "type": "string",
+                    "default": "healthy",
+                    "description": "Reference/control level in the condition column."
+                },
+                "confounder": {
+                    "type": "string",
+                    "description": "Optional confounder column(s) in sample_data."
+                },
+                "bc_confounder": {
+                    "type": "string",
+                    "description": "Batch-correction confounder column (used by Maaslin2)."
+                },
+                "metadata_condition": {
+                    "type": "string",
+                    "default": "group",
+                    "description": "Condition column name for simulated data (set by MIDASim, usually 'group').",
+                    "hidden": true
+                },
+                "metadata_base": {
+                    "type": "string",
+                    "default": "control",
+                    "description": "Base level name for simulated data (set by MIDASim, usually 'control').",
+                    "hidden": true
+                },
+                "metadata_confounder": {
+                    "type": "string",
+                    "description": "Confounder column for simulated data analysis.",
+                    "hidden": true
+                },
+                "metadata_bc_confounder": {
+                    "type": "string",
+                    "description": "Batch-correction confounder for simulated data.",
+                    "hidden": true
+                }
+            }
+        },
+        "simulation_options": {
+            "title": "Simulation parameters",
+            "type": "object",
+            "fa_icon": "fas fa-random",
+            "description": "Parameters controlling the MIDASim simulation grid (Path B only).",
+            "properties": {
+                "sim_n_ctrl": {
+                    "type": "integer",
+                    "description": "Number of control samples per simulation. If null, uses input dataset size."
+                },
+                "sim_n_case": {
+                    "type": "integer",
+                    "description": "Number of case samples per simulation. If null, uses input dataset size."
+                },
+                "sim_p_da": {
+                    "type": "string",
+                    "description": "Proportions of DA taxa to simulate (Nextflow list, e.g. [0.05, 0.10])."
+                },
+                "sim_abs_logfc": {
+                    "type": "string",
+                    "description": "Absolute log-fold changes to simulate (Nextflow list, e.g. [0.5, 1.0, 2.0])."
+                },
+                "sim_n_rep": {
+                    "type": "integer",
+                    "default": 3,
+                    "description": "Number of replicates per scenario."
+                },
+                "sim_design": {
+                    "type": "string",
+                    "description": "Sample design types to simulate (Nextflow list, e.g. [balanced, unbalanced])."
+                },
+                "sim_subset_var": {
+                    "type": "string",
+                    "description": "Optional sample_data column to subset controls before simulation."
+                },
+                "sim_subset_keep": {
+                    "type": "string",
+                    "description": "Level to keep when subsetting controls."
+                },
+                "sim_batch_col": {
+                    "type": "string",
+                    "description": "Optional batch column for batch-aware simulation."
+                },
+                "sim_batch_sd": {
+                    "type": "number",
+                    "default": 0.3,
+                    "description": "Standard deviation for batch effects."
+                },
+                "sim_seed0": {
+                    "type": "integer",
+                    "default": 123,
+                    "description": "Base random seed for simulations."
+                },
+                "sim_prefix": {
+                    "type": "string",
+                    "default": "dataset",
+                    "description": "Prefix for scenario folder names."
+                },
+                "sim_outdir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Output directory for simulated data.",
+                    "hidden": true
+                }
+            }
+        },
+        "da_tool_options": {
+            "title": "DA tool selection",
+            "type": "object",
+            "fa_icon": "fas fa-tools",
+            "description": "Toggle which differential abundance tools to run.",
+            "properties": {
+                "tool_adapt": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run ADAPT."
+                },
+                "tool_corncob": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run corncob."
+                },
+                "tool_linda": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run LinDA (MicrobiomeStat)."
+                },
+                "tool_locom": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run LOCOM2."
+                },
+                "tool_maaslin2": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Run Maaslin2."
+                },
+                "tool_metagenomeseq": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Run metagenomeSeq."
+                },
+                "metagenomeseq_contrast_mode": {
+                    "type": "string",
+                    "description": "Contrast mode for metagenomeSeq."
+                },
+                "metagenomeseq_contrast": {
+                    "type": "string",
+                    "description": "Contrast specification for metagenomeSeq."
+                }
+            }
+        },
+        "scoring_options": {
+            "title": "Scoring and consensus parameters",
+            "type": "object",
+            "fa_icon": "fas fa-chart-bar",
+            "description": "Parameters for DA scoring (Path B) and k-intersection consensus (Path A).",
+            "properties": {
+                "eval_alpha": {
+                    "type": "number",
+                    "default": 0.05,
+                    "description": "Significance threshold for DA evaluation."
+                },
+                "eval_fdr_target": {
+                    "type": "number",
+                    "default": 0.05,
+                    "description": "Target FDR for scoring."
+                },
+                "eval_fdr_reference": {
+                    "type": "number",
+                    "default": 0.10,
+                    "description": "Reference FDR threshold for scoring."
+                },
+                "eval_retention_at_ref": {
+                    "type": "number",
+                    "default": 0.25,
+                    "description": "Minimum retention at reference FDR."
+                },
+                "consensus_alpha": {
+                    "type": "number",
+                    "default": 0.05,
+                    "description": "Significance threshold for k-intersection consensus (Path A)."
+                },
+                "consensus_lfc_min": {
+                    "type": "number",
+                    "default": 0,
+                    "description": "Minimum log-fold change for k-intersection consensus (Path A)."
                 }
             }
         },
@@ -166,6 +381,21 @@
     "allOf": [
         {
             "$ref": "#/$defs/input_output_options"
+        },
+        {
+            "$ref": "#/$defs/pipeline_mode_options"
+        },
+        {
+            "$ref": "#/$defs/metadata_options"
+        },
+        {
+            "$ref": "#/$defs/simulation_options"
+        },
+        {
+            "$ref": "#/$defs/da_tool_options"
+        },
+        {
+            "$ref": "#/$defs/scoring_options"
         },
         {
             "$ref": "#/$defs/institutional_config_options"

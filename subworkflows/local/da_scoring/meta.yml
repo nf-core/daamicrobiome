@@ -1,2 +1,36 @@
-name: da_scoring_wf
-description: "Subworkflow to run DA scoring when simulations are enabled."
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "da_scoring_wf"
+description: Evaluate DA tool performance on simulated data and produce scoring output
+keywords:
+  - differential-abundance
+  - scoring
+  - simulation
+  - evaluation
+components:
+  - da/scoring
+input:
+  - da_results_ch:
+      type: channel
+      description: |
+        Stream of DA results from all simulated replicates
+        Structure: [ val(rep_id), val(tool_id), path(result) ]
+  - sim_root_dir_ch:
+      type: channel
+      description: |
+        Root directory containing simulated data
+        Structure: [ path(sim_root) ]
+  - truth_root_dir_ch:
+      type: channel
+      description: |
+        Root directory containing ground-truth DA labels
+        Structure: [ path(truth_root) ]
+output:
+  - scoring_dir:
+      type: directory
+      description: |
+        Directory containing scoring results (weights, metrics)
+        Structure: [ path(scoring_dir) ]
+authors:
+  - "@mcardina"
+maintainers:
+  - "@mcardina"

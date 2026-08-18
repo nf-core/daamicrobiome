@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "diff_abundance"
+description: Run all enabled DA tools on simulated replicate datasets
+keywords:
+  - differential-abundance
+  - simulation
+  - adapt
+  - corncob
+  - linda
+  - locom
+  - maaslin2
+  - metagenomeseq
+components:
+  - adapt
+  - corncob
+  - linda
+  - locom
+  - maaslin2
+  - metagenomeseq
+input:
+  - rep_rds_ch:
+      type: channel
+      description: |
+        Simulated replicate phyloseq RDS files
+        Structure: [ val(rep_id), path(replicate.rds) ]
+output:
+  - da_results:
+      type: channel
+      description: |
+        Unified stream of DA results from all enabled tools
+        Structure: [ val(rep_id), val(tool_id), path(result.tsv) ]
+authors:
+  - "@mcardina"
+maintainers:
+  - "@mcardina"
