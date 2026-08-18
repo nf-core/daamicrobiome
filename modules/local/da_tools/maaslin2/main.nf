@@ -2,6 +2,9 @@ process MAASLIN2 {
   tag {"MAASLIN2:${rep_id}"}
 
   conda "${moduleDir}/environment.yml"
+  container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+      'oras://community.wave.seqera.io/library/bioconductor-maaslin2_bioconductor-phyloseq_r-optparse:a820d227f382d075' :
+      'community.wave.seqera.io/library/bioconductor-maaslin2_bioconductor-phyloseq_r-optparse:2fd7d8f98648dbfe' }"
 
   input:
   tuple val(rep_id), path(rds_file)
