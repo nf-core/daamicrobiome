@@ -28,13 +28,13 @@
 
 ### DA tools included
 
-| Tool | Reference |
-|------|-----------|
-| [ADAPT](https://bioconductor.org/packages/ADAPT/) | Wang & Mukai, 2024 |
-| [corncob](https://github.com/statdivlab/corncob) | Martin et al., 2020 |
-| [LinDA](https://github.com/zhouhj1994/LinDA) | Zhou et al., 2022 |
-| [LOCOM](https://github.com/yijuanhu/LOCOM) | Hu et al., 2022 |
-| [MaAsLin2](https://huttenhower.sph.harvard.edu/maaslin/) | Mallick et al., 2021 |
+| Tool                                                              | Reference            |
+| ----------------------------------------------------------------- | -------------------- |
+| [ADAPT](https://bioconductor.org/packages/ADAPT/)                 | Wang & Mukai, 2024   |
+| [corncob](https://github.com/statdivlab/corncob)                  | Martin et al., 2020  |
+| [LinDA](https://github.com/zhouhj1994/LinDA)                      | Zhou et al., 2022    |
+| [LOCOM](https://github.com/yijuanhu/LOCOM)                        | Hu et al., 2022      |
+| [MaAsLin2](https://huttenhower.sph.harvard.edu/maaslin/)          | Mallick et al., 2021 |
 | [metagenomeSeq](https://bioconductor.org/packages/metagenomeSeq/) | Paulson et al., 2013 |
 
 ### Pipeline overview

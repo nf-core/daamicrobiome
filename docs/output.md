@@ -6,10 +6,10 @@
 
 Output directory: `results/k_intersection/`
 
-| File | Description |
-|------|-------------|
-| `k_intersection.xlsx` | XLSX workbook with one sheet per k (k = 1 to n_tools). Each sheet lists taxa called DA by at least k tools in the same direction. |
-| `k_<N>_intersection.csv` | Individual CSV files for each k value |
+| File                     | Description                                                                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `k_intersection.xlsx`    | XLSX workbook with one sheet per k (k = 1 to n_tools). Each sheet lists taxa called DA by at least k tools in the same direction. |
+| `k_<N>_intersection.csv` | Individual CSV files for each k value                                                                                             |
 
 Columns in each sheet/CSV:
 
@@ -31,8 +31,8 @@ Each enabled DA tool produces a TSV file with per-taxon p-values, adjusted p-val
 
 Output directory: `results/weighted_consensus/`
 
-| File | Description |
-|------|-------------|
+| File                             | Description                                                         |
+| -------------------------------- | ------------------------------------------------------------------- |
 | `weighted_consensus_da_taxa.csv` | Final list of consensus DA taxa with direction and per-tool details |
 
 Columns:
@@ -48,25 +48,25 @@ Columns:
 
 Output directory: `results/da_scoring/`
 
-| File | Description |
-|------|-------------|
-| `tool_scores.csv` | Per-tool weights learned from simulations |
-| `optimal_threshold.txt` | The optimal score threshold |
-| `threshold_summary.csv` | Summary of threshold optimisation |
+| File                                     | Description                                  |
+| ---------------------------------------- | -------------------------------------------- |
+| `tool_scores.csv`                        | Per-tool weights learned from simulations    |
+| `optimal_threshold.txt`                  | The optimal score threshold                  |
+| `threshold_summary.csv`                  | Summary of threshold optimisation            |
 | `global_performance_tools_threshold.png` | Performance plot across tools and thresholds |
-| `tool_metrics_by_dataset.csv` | Per-tool, per-simulation-scenario metrics |
-| `simulation_analysis.rds` | Full R object with all scoring results |
+| `tool_metrics_by_dataset.csv`            | Per-tool, per-simulation-scenario metrics    |
+| `simulation_analysis.rds`                | Full R object with all scoring results       |
 
 ### Simulated data
 
 Output directory: `results/simulated_data/`
 
-| File/Directory | Description |
-|----------------|-------------|
-| `rds/*.RDS` | Simulated phyloseq objects |
-| `truth/` | Ground-truth DA status per simulation scenario |
-| `meta/` | Simulation metadata |
-| `index.csv` | Index mapping scenario IDs to simulation parameters |
+| File/Directory | Description                                         |
+| -------------- | --------------------------------------------------- |
+| `rds/*.RDS`    | Simulated phyloseq objects                          |
+| `truth/`       | Ground-truth DA status per simulation scenario      |
+| `meta/`        | Simulation metadata                                 |
+| `index.csv`    | Index mapping scenario IDs to simulation parameters |
 
 ### DA tool results (simulated)
 
@@ -84,6 +84,6 @@ Same as Path A — per-tool TSV files for the real dataset.
 
 Output directory: `results/control_extract/` (only if `--input_control` was not provided)
 
-| File | Description |
-|------|-------------|
+| File                   | Description                                             |
+| ---------------------- | ------------------------------------------------------- |
 | `control_phyloseq.RDS` | Phyloseq object containing only control/healthy samples |

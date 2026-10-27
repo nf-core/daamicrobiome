@@ -5,7 +5,7 @@ library(corncob); packageVersion("corncob") # 0.4.2
 library(phyloseq)
 
 run_corncob_analysis <- function(ps_object, condition_var, base_condition, confounder, output_dir){
-  
+
   conf_vec <- normalize_confounders(confounder)
   has_confounder <- length(conf_vec) > 0
 

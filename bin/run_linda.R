@@ -5,7 +5,7 @@ library(MicrobiomeStat); packageVersion("MicrobiomeStat")
 library(phyloseq)
 
 run_linda_analysis <- function(ps_object, condition_var, base_condition, confounder = NULL, output_dir) {
-  
+
   confounder <- normalize_confounders(confounder)
   if (length(confounder) == 0) confounder <- NULL
 
@@ -13,7 +13,7 @@ run_linda_analysis <- function(ps_object, condition_var, base_condition, confoun
   metadata_linda <- data.frame(sample_data(ps_object))
   # Ensure condition is a factor with the correct reference level
   metadata_linda[[condition_var]] <- relevel(factor(metadata_linda[[condition_var]]), ref = base_condition)
-  
+
   # build formula
   rhs <- condition_var
   if (!is.null(confounder) && length(confounder) > 0)
@@ -26,23 +26,23 @@ run_linda_analysis <- function(ps_object, condition_var, base_condition, confoun
     meta.dat = metadata_linda,
     formula = fml
   )
-  
+
   # Get contrasts (all non-reference levels)
   linda_contrast_cols <- setdiff(levels(metadata_linda[[condition_var]]), base_condition)
-  
+
   # Ensure output directory exists
   dir.create(output_dir, showWarnings = FALSE)
-  
+
   # Loop through contrasts and save separate files for each
   for(contrast in linda_contrast_cols) {
-    
+
     linda_contrast_name <- paste0(condition_var, contrast)
-    
+
     if(!(linda_contrast_name %in% names(results_linda$output))) {
       warning("Contrast ", linda_contrast_name, " not found. Skipping.")
       next
     }
-    
+
     # Save standardized results for heatmap including p-value
     if(nrow(results_linda$output[[linda_contrast_name]]) == 0) {
       heatmap_ready <- data.frame(
@@ -67,7 +67,7 @@ run_linda_analysis <- function(ps_object, condition_var, base_condition, confoun
 
     # Save results
     write.table(
-      heatmap_ready, 
+      heatmap_ready,
       file = file.path(output_dir, "linda_da.tsv"),
       sep = "\t", quote = FALSE, row.names = FALSE
     )

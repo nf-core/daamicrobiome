@@ -8,7 +8,7 @@ run_maaslin2_analysis <- function(ps_object, condition_var, base_condition, conf
                                   min_prevalence = 0, max_significance = 0.5) {
 
   metadata_df <- data.frame(sample_data(ps_object), check.names = FALSE, stringsAsFactors = FALSE)
-  
+
   confounders <- normalize_confounders(confounder)
   if (length(confounders) == 0) confounders <- character(0)
 
@@ -59,13 +59,13 @@ run_maaslin2_analysis <- function(ps_object, condition_var, base_condition, conf
   }
 
   fit <- do.call(Maaslin2, maas_args)
-  
+
   # Load significant results
   all_results_path <- file.path(output_dir, "all_results.tsv")
   if (!file.exists(all_results_path)) {
     stop("No all_results.tsv found. Check if Maaslin2 ran successfully.")
   }
-  
+
   maaslin2_all <- read.table(all_results_path, header = TRUE, sep = "\t")
   # Keep only rows for the main condition (avoid duplicate taxa from confounders)
   maaslin2_all <- subset(maaslin2_all, metadata == condition_var)
@@ -96,7 +96,7 @@ run_maaslin2_analysis <- function(ps_object, condition_var, base_condition, conf
               file = file.path(output_dir, "maaslin2_da.tsv"),
               sep = "\t", quote = FALSE, row.names = FALSE)
 
-  
+
   return(fit)
 }
 
