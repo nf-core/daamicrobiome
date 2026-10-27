@@ -297,7 +297,7 @@ if (!is.na(plot_path)) message("Saved taxa distribution plot: ", plot_path)
     tag = tag,
     tag_base = tag_base,
     design = design_tag,
-    p_DA = p_da,  
+    p_DA = p_da,
     abs_logFC = abs_lfc,
     replicate = rep_id,
     rds = ps_path,

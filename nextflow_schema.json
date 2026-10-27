@@ -233,7 +233,7 @@
                 },
                 "eval_fdr_reference": {
                     "type": "number",
-                    "default": 0.10,
+                    "default": 0.1,
                     "description": "Reference FDR threshold for scoring."
                 },
                 "eval_retention_at_ref": {

@@ -198,7 +198,7 @@ main <- function() {
     conf_cols <- conf_cols[nzchar(conf_cols)]
     if (length(conf_cols) == 0) conf_cols <- NULL
   }
-  
+
   run_locom_analysis(ps_object, args$condition, args$base, conf_cols, args$output_dir)
 }
 

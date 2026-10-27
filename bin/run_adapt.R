@@ -23,7 +23,7 @@ run_adapt_analysis <- function(ps_object, condition_var, base_condition, confoun
   sample_data(ps_object)[[condition_var]] <- relevel(factor(sample_data(ps_object)[[condition_var]]), ref = base_condition)
 
   cat("Running ADAPT...\n")
-  adapt_result <- adapt(ps_object, condition_var, base.cond = base_condition, 
+  adapt_result <- adapt(ps_object, condition_var, base.cond = base_condition,
                         adj.var = confounder,
                         prev.filter = 0, depth.filter = 200, alpha = 0.4)
 

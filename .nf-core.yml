@@ -19,7 +19,7 @@ template:
   author: Martina Cardinali
   version: 1.0.0dev
   force: true
-  outdir: nf-core-daamicrobiome
+  outdir: .
   skip_features:
     - igenomes
     - fastqc
